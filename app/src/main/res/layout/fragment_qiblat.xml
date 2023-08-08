@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -23,9 +24,16 @@
             android:id="@+id/longitudeText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="30dp"
             android:gravity="center"
             android:text="Hello I'm a Qiblat Finder but still work in progress"
             android:textSize="18sp" />
+
+        <ImageView
+            android:id="@+id/arrowImage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:src="@drawable/white_arrow" />
     </LinearLayout>
 
 </FrameLayout>

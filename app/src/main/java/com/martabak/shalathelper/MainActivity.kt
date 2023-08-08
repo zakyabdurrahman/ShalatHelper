@@ -4,6 +4,7 @@ package com.martabak.shalathelper
 import android.Manifest.permission
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.location.Address
 import android.location.Geocoder
@@ -37,21 +38,25 @@ class MainActivity : AppCompatActivity() {
     val tabTexts = listOf<String>("Waktu Solat", "Qiblat")
     var location : Location? = null
     val sharedModel: MainViewModel by viewModels()
-
+    var sharedPref : SharedPreferences? = null
+    var lastlatitude : Double? = null
+    var lastlongitude : Double? = null
+    var city : String = "Jakarta Pusat"
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        //global variables here
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-
-
+        sharedPref = getSharedPreferences("lokasi", Context.MODE_PRIVATE)
+        var FragmentList = listOf<Fragment>(PrayerTime(), QiblatFragment())
 
         viewPager = findViewById(R.id.MainPager)
         //very easy to make swipeable fragment do it like this. make fragment list then connect it to
         //fragment state adapter then connect the adapter to tablayout using tablayoutmediator
-        var FragmentList = listOf<Fragment>(PrayerTime(), QiblatFragment())
+
         locationText = findViewById(R.id.locationText)
 
         viewPager.adapter = object : FragmentStateAdapter(this) {
@@ -69,12 +74,11 @@ class MainActivity : AppCompatActivity() {
         TabLayoutMediator(tabLayout, viewPager) {
             tab, pos -> tab.text =  tabTexts[pos]
         }.attach()
-        val sharedPref = getSharedPreferences("lokasi", Context.MODE_PRIVATE)
+
         //fetch location saved in sharedprefences
-        var lastlongitude : Double = sharedPref.getString("lat", "0")!!.toDouble()
-        var lastlatitude : Double = sharedPref.getString("long", "0")!!.toDouble()
+        getInitLocation()
         //bring that data to viewmodel
-        sharedModel.updateCoordinate(Coordinate(lastlatitude, lastlongitude))
+        sharedModel.updateCoordinate(Coordinate(lastlatitude!!, lastlongitude!!))
         locButton = findViewById(R.id.UpdateLocButton)
         locButton.setOnClickListener {
             if (isLocationEnabled()) {
@@ -93,6 +97,26 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+
+    fun getInitLocation() {
+        val jakartaLat = -6.17388
+        val jakartaLong = 106.83308
+        lastlongitude = Double.fromBits(sharedPref!!.getLong("long", jakartaLong.toBits()))
+        lastlatitude = Double.fromBits(sharedPref!!.getLong("lat", jakartaLat.toBits()))
+        city = sharedPref!!.getString("city", "Jakarta Pusat")!!
+        locationText.text = "$city - Indonesia"
+        Log.d("zaky", "Retrieved city is $city")
+    }
+
+    fun saveLocToSP(latitude: Double, longitude: Double) {
+        sharedPref!!.edit().apply {
+            putLong("lat", latitude.toBits())
+            putLong("long", longitude.toBits())
+            putString("city", city)
+            apply()
+        }
+
+    }
 
 
     // function to check if location is enabled public so can be called from fragment
@@ -158,6 +182,7 @@ class MainActivity : AppCompatActivity() {
                             var latitude = location!!.latitude
                             var longitude = location!!.longitude
                             updateLocationUI(longitude, latitude)
+                            saveLocToSP(latitude, longitude)
                         }
                         else {
                             //when the last location returns null we request location update to start
@@ -177,7 +202,7 @@ class MainActivity : AppCompatActivity() {
         sharedModel.updateCoordinate(Coordinate(latitude, longitude))
         var address = getAddress(latitude, longitude)
         var country : String = address.countryName
-        var city : String = address.subAdminArea
+        city = address.subAdminArea
         Log.d("zaky", "Kota: $city Negara: $country")
         locationText.text = "$city - $country"
     }
